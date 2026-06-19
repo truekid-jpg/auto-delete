@@ -68,8 +68,9 @@ client.once("ready", async () => {
   ].map(c => c.toJSON());
 
   const rest = new REST({ version: "10" }).setToken(TOKEN);
-  await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-  console.log("Commands registered");
+  console.log("App ID:", client.user.id);
+  const result = await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+  console.log("Commands registered:", JSON.stringify(result));
 });
 
 client.on("interactionCreate", async (interaction) => {
