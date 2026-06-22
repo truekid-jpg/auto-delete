@@ -64,22 +64,22 @@ client.on("interactionCreate", async (interaction) => {
   const sub = interaction.options.getSubcommand();
   if (sub === "exclude") {
     const channel = interaction.options.getChannel("channel");
-    if (data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is already excluded.`, ephemeral: true });
+    if (data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is already excluded.`, flags: 64 });
     data.excluded.push(channel.id);
     saveData(data);
     return interaction.reply(`✅ <#${channel.id}> is now excluded — messages there will never be deleted when a member leaves.`);
   }
   if (sub === "unexclude") {
     const channel = interaction.options.getChannel("channel");
-    if (!data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is not in the exclusion list.`, ephemeral: true });
+    if (!data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is not in the exclusion list.`, flags: 64 });
     data.excluded = data.excluded.filter(id => id !== channel.id);
     saveData(data);
     return interaction.reply(`✅ <#${channel.id}> removed from exclusion list.`);
   }
   if (sub === "list") {
-    if (data.excluded.length === 0) return interaction.reply({ content: "No channels are currently excluded.", ephemeral: true });
+    if (data.excluded.length === 0) return interaction.reply({ content: "No channels are currently excluded.", flags: 64 });
     const list = data.excluded.map(id => `<#${id}>`).join("\n");
-    return interaction.reply({ content: `**Excluded channels:**\n${list}`, ephemeral: true });
+    return interaction.reply({ content: `**Excluded channels:**\n${list}`, flags: 64 });
   }
 });
 client.on("guildMemberRemove", async (member) => {
