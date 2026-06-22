@@ -35,6 +35,11 @@ autodeleteCmd.setName("autodelete");
 autodeleteCmd.setDescription("Manage auto-delete settings");
 autodeleteCmd.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 autodeleteCmd.addSubcommand(sub => {
+  sub.setName("help");
+  sub.setDescription("Learn how Auto Delete works");
+  return sub;
+});
+autodeleteCmd.addSubcommand(sub => {
   sub.setName("exclude");
   sub.setDescription("Exclude a channel from member-leave deletions");
   sub.addChannelOption(opt => { opt.setName("channel"); opt.setDescription("The channel to protect"); opt.setRequired(true); return opt; });
@@ -62,6 +67,9 @@ client.once("clientReady", async () => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== "autodelete") return;
   const sub = interaction.options.getSubcommand();
+  if (sub === "help") {
+    return interaction.reply({ content: `**How Auto Delete works:**\n\nWhen a member leaves your server, the bot automatically finds and deletes every message they sent across all channels.\n\n**Commands:**\n\`/autodelete exclude #channel\` — protect a channel so messages there are never deleted\n\`/autodelete unexclude #channel\` — remove a channel from the protection list\n\`/autodelete list\` — see all protected channels\n\n**Note:** Messages older than 14 days are deleted one by one which can take a few minutes depending on how many messages the user had.`, flags: 64 });
+  }
   if (sub === "exclude") {
     const channel = interaction.options.getChannel("channel");
     if (data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is already excluded.`, flags: 64 });
