@@ -59,7 +59,7 @@ autodeleteCmd.addSubcommand(sub => {
 const commands = [autodeleteCmd.toJSON()];
 client.once("clientReady", async () => {
   console.log(`Logged in as ${client.user.tag}`);
-  client.user.setActivity("Auto-deleting messages", { type: 0 });
+  client.user.setActivity("Auto-deleting messages", { type: 3 });
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
   console.log("Slash commands registered.");
