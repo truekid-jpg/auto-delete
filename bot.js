@@ -3,9 +3,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const TOKEN    = process.env.BOT_TOKEN;
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_FILE = path.join(__dirname, "autodelete.json");
+const TOKEN     = process.env.BOT_TOKEN;
+const DATA_DIR  = process.env.DATA_DIR ?? path.dirname(fileURLToPath(import.meta.url));
+const DATA_FILE = path.join(DATA_DIR, "autodelete.json");
 
 function loadData() {
   if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
