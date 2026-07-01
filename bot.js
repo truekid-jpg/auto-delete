@@ -7,6 +7,7 @@ const TOKEN     = process.env.BOT_TOKEN;
 const DATA_DIR  = process.env.DATA_DIR ?? path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.join(DATA_DIR, "autodelete.json");
 
+// ── Persistence ───────────────────────────────────────────────
 function loadData() {
   if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
   return { excluded: [] };
@@ -18,6 +19,7 @@ function saveData(data) {
 let data = loadData();
 if (!data.excluded) { data.excluded = []; saveData(data); }
 
+// ── Client ────────────────────────────────────────────────────
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -27,6 +29,7 @@ const client = new Client({
   ],
 });
 
+// ── Slot limiter ──────────────────────────────────────────────
 const MAX_CONCURRENT = 50;
 let running = 0;
 const waitQueue = [];
@@ -41,6 +44,7 @@ function releaseSlot() {
   else running--;
 }
 
+// ── Slash commands ────────────────────────────────────────────
 const commands = [
   new SlashCommandBuilder()
     .setName("autodelete")
@@ -62,41 +66,48 @@ const commands = [
     ),
 ].map(c => c.toJSON());
 
+// ── Ready ─────────────────────────────────────────────────────
 client.once("clientReady", async () => {
   console.log(`Logged in as ${client.user.tag}`);
-  client.user.setActivity("Auto-deleting messages", { type: 3 });
+  const guildList = client.guilds.cache.map(g => `  - ${g.name} (${g.id})`).join("\n");
+  console.log(`In ${client.guilds.cache.size} server(s):\n${guildList}`);
+  client.user.setActivity("Auto-deleting messages", { type: 0 });
+
   const rest = new REST({ version: "10" }).setToken(TOKEN);
   await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
   console.log("Slash commands registered.");
 });
 
+// ── Slash command handler ─────────────────────────────────────
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== "autodelete") return;
+
   const sub = interaction.options.getSubcommand();
 
   if (sub === "exclude") {
     const channel = interaction.options.getChannel("channel");
-    if (data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is already excluded.`, flags: 64 });
+    if (data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is already excluded.`, ephemeral: true });
     data.excluded.push(channel.id);
     saveData(data);
-    return interaction.reply({ content: `✅ <#${channel.id}> is now excluded — messages there will never be deleted when a member leaves.`, flags: 64 });
+    return interaction.reply(`✅ <#${channel.id}> is now excluded — messages there will never be deleted when a member leaves.`);
   }
 
   if (sub === "unexclude") {
     const channel = interaction.options.getChannel("channel");
-    if (!data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is not in the exclusion list.`, flags: 64 });
+    if (!data.excluded.includes(channel.id)) return interaction.reply({ content: `❌ <#${channel.id}> is not in the exclusion list.`, ephemeral: true });
     data.excluded = data.excluded.filter(id => id !== channel.id);
     saveData(data);
-    return interaction.reply({ content: `✅ <#${channel.id}> removed from exclusion list.`, flags: 64 });
+    return interaction.reply(`✅ <#${channel.id}> removed from exclusion list.`);
   }
 
   if (sub === "list") {
-    if (data.excluded.length === 0) return interaction.reply({ content: "No channels are currently excluded.", flags: 64 });
+    if (data.excluded.length === 0) return interaction.reply({ content: "No channels are currently excluded.", ephemeral: true });
     const list = data.excluded.map(id => `<#${id}>`).join("\n");
-    return interaction.reply({ content: `**Excluded channels:**\n${list}`, flags: 64 });
+    return interaction.reply({ content: `**Excluded channels:**\n${list}`, ephemeral: true });
   }
 });
 
+// ── Member leave — delete all their messages ──────────────────
 client.on("guildMemberRemove", async (member) => {
   const userId = member.user?.id ?? member.id;
   const userTag = member.user?.tag ?? userId;
